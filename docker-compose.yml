@@ -1,0 +1,42 @@
+version: "3.4"
+services:
+    mongodb:
+        image: mongo
+        container_name: mongodb
+        environment:
+          - MONGO_INITDB_ROOT_USERNAME=root
+          - MONGO_INITDB_ROOT_PASSWORD=123
+          - MONGO_INITDB_DATABASE=callisto
+        volumes:
+          - ./mongodb/mongodb:/data/db
+        restart: always
+        ports:
+        - 27018:27017
+        networks:
+          - mongonet
+   
+    mongo-seed:
+        image: mongo
+        depends_on:
+          - mongodb
+        volumes:
+          - ./mongodb/callisto_data.json:/data.json
+        command: bash -c 'mongoimport --host mongodb --db callisto --collection callisto --type json --file /data.json --jsonArray --username root --password 123 --authenticationDatabase admin'
+        networks:
+          - mongonet
+    
+    multimodal-search:
+        build:
+            context: ./code
+            dockerfile: ./Dockerfile
+        container_name: multimodal-search-service
+        restart: always
+        ports:
+            - 9005:9005
+        networks:
+            - mongonet
+        
+networks:
+    mongonet:
+        driver: bridge
+
